@@ -12,6 +12,7 @@
     #menu p a { text-decoration: none; color: black; }
     #upcoming { display: block; margin: 0 auto; background-color: #E0E0E0; }
     #score    { color: red; font-weight: bold; vertical-align: middle; }
+    #highscore    { color: red; font-weight: bold; vertical-align: middle; }
     #rows     { color: blue; font-weight: bold; vertical-align: middle; }
     #stats    { position: absolute; bottom: 0em; right: 1em; }
     @media screen and (min-width:   0px) and (min-height:   0px)  { #tetris { font-size: 0.75em; width: 250px; } #menu { width: 100px; height: 200px; } #upcoming { width:  50px; height:  50px; } #canvas { width: 100px; height: 200px; } } /* 10px chunks */
@@ -24,7 +25,7 @@
   </style>
 </head>
 
-<embed src="Shrek's Row.mp3" autostart="true" loop="true"
+<embed src="tetris_themeA.mp3" autostart="true" loop="true"
 width="2" height="0">
 </embed>
 
@@ -35,6 +36,7 @@ width="2" height="0">
       <p id="start"><a href="javascript:play();">Press Space to Play.</a></p>
       <p><canvas id="upcoming"></canvas></p>
       <p>score <span id="score">00000</span></p>
+      <p>highscore <span id="highscore">00000</span></p>
       <p>rows <span id="rows">0</span></p>
     </div>
     <canvas id="canvas">
@@ -79,10 +81,12 @@ width="2" height="0">
         ctx     = canvas.getContext('2d'),
         ucanvas = get('upcoming'),
         uctx    = ucanvas.getContext('2d'),
-        speed   = { start: 0.6, decrement: 0.005, min: 0.1 }, // how long before piece drops by 1 row (seconds)
+        speed   = { start: 0.6, decrement: 0.02, min: 0.1 }, // how long before piece drops by 1 row (seconds)
         nx      = 10, // width of tetris court (in blocks)
         ny      = 20, // height of tetris court (in blocks)
-        nu      = 5;  // width/height of upcoming preview (in blocks)
+        nu      = 5,  // width/height of upcoming preview (in blocks)
+        highscore = 0;     // the highscore
+
 
     //-------------------------------------------------------------------------
     // game variables (initialized during reset)
@@ -99,6 +103,8 @@ width="2" height="0">
         vscore,        // the currently displayed score (it catches up to score in small chunks - like a spinning slot machine)
         rows,          // number of completed rows in the current game
         step;          // how long before current piece drops by 1 row
+
+    var jingle_audio = new Audio('tetris_jingle.mp3'); //this loads the line complete jingle
 
     //-------------------------------------------------------------------------
     // tetris pieces
@@ -243,7 +249,7 @@ width="2" height="0">
     function lose() { show('start'); setVisualScore(); playing = false; }
 
     function setVisualScore(n)      { vscore = n || score; invalidateScore(); }
-    function setScore(n)            { score = n; setVisualScore(n);  }
+    function setScore(n)            { score = n; setVisualScore(n); }
     function addScore(n)            { score = score + n;   }
     function clearScore()           { setScore(0); }
     function clearRows()            { setRows(0); }
@@ -266,10 +272,13 @@ width="2" height="0">
       setNextPiece();
     }
 
-    function update(idt) {
+    function update(idt) { 
       if (playing) {
         if (vscore < score)
+        {
           setVisualScore(vscore + 1);
+          if (score > highscore){highscore = score;}
+        }
         handle(actions.shift());
         dt = dt + idt;
         if (dt > step) {
@@ -343,6 +352,7 @@ width="2" height="0">
             complete = false;
         }
         if (complete) {
+          jingle_audio.play();
           removeLine(y);
           y = y + 1; // recheck same line
           n++;
@@ -418,6 +428,7 @@ width="2" height="0">
     function drawScore() {
       if (invalid.score) {
         html('score', ("00000" + Math.floor(vscore)).slice(-5));
+        html('highscore', ("00000" + Math.floor(highscore)).slice(-5));
         invalid.score = false;
       }
     }
@@ -433,7 +444,7 @@ width="2" height="0">
       eachblock(type, x, y, dir, function(x, y) {
         drawBlock(ctx, x, y, type.color);
       });
-    }
+   }
 
     function drawBlock(ctx, x, y, color) {
       ctx.fillStyle = color;
